@@ -13,13 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoop;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.unix.FileDescriptor;
+import static io.netty.channel.unix.NativeInetAddress.address;
 import io.netty.channel.unix.Socket;
+import static io.netty.channel.unix.Socket.newSocketStream;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -28,9 +31,6 @@ import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-
-import static io.netty.channel.unix.NativeInetAddress.address;
-import static io.netty.channel.unix.Socket.newSocketStream;
 
 /**
  * {@link ServerSocketChannel} implementation that uses linux EPOLL Edge-Triggered Mode for

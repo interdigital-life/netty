@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.ChannelOption;
@@ -44,7 +45,7 @@ public final class EpollChannelOption<T> extends ChannelOption<T> {
 
     public static final ChannelOption<Map<InetAddress, byte[]>> TCP_MD5SIG = valueOf("TCP_MD5SIG");
 
-    @SuppressWarnings({ "unused", "deprecation" })
+    @SuppressWarnings({"unused", "deprecation"})
     private EpollChannelOption() {
         super(null);
     }

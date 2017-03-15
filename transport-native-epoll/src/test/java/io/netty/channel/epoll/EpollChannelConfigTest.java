@@ -13,12 +13,12 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.ChannelException;
-import org.junit.Test;
-
 import static org.junit.Assert.fail;
+import org.junit.Test;
 
 public class EpollChannelConfigTest {
 

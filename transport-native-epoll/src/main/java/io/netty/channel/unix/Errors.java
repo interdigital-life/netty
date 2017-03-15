@@ -13,8 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.unix;
 
+import static io.netty.channel.unix.ErrorsStaticallyReferencedJniMethods.*;
 import io.netty.util.internal.EmptyArrays;
 
 import java.io.IOException;
@@ -24,8 +26,6 @@ import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.NotYetConnectedException;
-
-import static io.netty.channel.unix.ErrorsStaticallyReferencedJniMethods.*;
 
 /**
  * <strong>Internal usage only!</strong>
@@ -54,40 +54,14 @@ public final class Errors {
      */
     private static final String[] ERRORS = new String[512];
 
-    /**
-     * <strong>Internal usage only!</strong>
-     */
-    public static final class NativeIoException extends IOException {
-        private static final long serialVersionUID = 8222160204268655526L;
-        private final int expectedErr;
-        public NativeIoException(String method, int expectedErr) {
-            super(method + "(..) failed: " + ERRORS[-expectedErr]);
-            this.expectedErr = expectedErr;
-        }
-
-        public int expectedErr() {
-            return expectedErr;
-        }
-    }
-
-    static final class NativeConnectException extends ConnectException {
-        private static final long serialVersionUID = -5532328671712318161L;
-        private final int expectedErr;
-        NativeConnectException(String method, int expectedErr) {
-            super(method + "(..) failed: " + ERRORS[-expectedErr]);
-            this.expectedErr = expectedErr;
-        }
-
-        int expectedErr() {
-            return expectedErr;
-        }
-    }
-
     static {
         for (int i = 0; i < ERRORS.length; i++) {
             // This is ok as strerror returns 'Unknown error i' when the message is not known.
             ERRORS[i] = strError(i);
         }
+    }
+
+    private Errors() {
     }
 
     static void throwConnectException(String method, NativeConnectException refusedCause, int err)
@@ -138,5 +112,34 @@ public final class Errors {
         throw newIOException(method, err);
     }
 
-    private Errors() { }
+    /**
+     * <strong>Internal usage only!</strong>
+     */
+    public static final class NativeIoException extends IOException {
+        private static final long serialVersionUID = 8222160204268655526L;
+        private final int expectedErr;
+
+        public NativeIoException(String method, int expectedErr) {
+            super(method + "(..) failed: " + ERRORS[-expectedErr]);
+            this.expectedErr = expectedErr;
+        }
+
+        public int expectedErr() {
+            return expectedErr;
+        }
+    }
+
+    static final class NativeConnectException extends ConnectException {
+        private static final long serialVersionUID = -5532328671712318161L;
+        private final int expectedErr;
+
+        NativeConnectException(String method, int expectedErr) {
+            super(method + "(..) failed: " + ERRORS[-expectedErr]);
+            this.expectedErr = expectedErr;
+        }
+
+        int expectedErr() {
+            return expectedErr;
+        }
+    }
 }

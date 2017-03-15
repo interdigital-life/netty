@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.bootstrap.Bootstrap;
@@ -24,43 +25,6 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 
 public class EpollSocketChannelTest {
-
-    @Test
-    public void testTcpInfo() throws Exception {
-        EventLoopGroup group = new EpollEventLoopGroup(1);
-
-        try {
-            Bootstrap bootstrap = new Bootstrap();
-            EpollSocketChannel ch = (EpollSocketChannel) bootstrap.group(group)
-                    .channel(EpollSocketChannel.class)
-                    .handler(new ChannelInboundHandlerAdapter())
-                    .bind(new InetSocketAddress(0)).syncUninterruptibly().channel();
-            EpollTcpInfo info = ch.tcpInfo();
-            assertTcpInfo0(info);
-            ch.close().syncUninterruptibly();
-        } finally {
-            group.shutdownGracefully();
-        }
-    }
-
-    @Test
-    public void testTcpInfoReuse() throws Exception {
-        EventLoopGroup group = new EpollEventLoopGroup(1);
-
-        try {
-            Bootstrap bootstrap = new Bootstrap();
-            EpollSocketChannel ch = (EpollSocketChannel) bootstrap.group(group)
-                    .channel(EpollSocketChannel.class)
-                    .handler(new ChannelInboundHandlerAdapter())
-                    .bind(new InetSocketAddress(0)).syncUninterruptibly().channel();
-            EpollTcpInfo info = new EpollTcpInfo();
-            ch.tcpInfo(info);
-            assertTcpInfo0(info);
-            ch.close().syncUninterruptibly();
-        } finally {
-            group.shutdownGracefully();
-        }
-    }
 
     private static void assertTcpInfo0(EpollTcpInfo info) throws Exception {
         Assert.assertNotNull(info);
@@ -97,5 +61,42 @@ public class EpollSocketChannelTest {
         Assert.assertTrue(info.rcvRtt() >= 0);
         Assert.assertTrue(info.rcvSpace() >= 0);
         Assert.assertTrue(info.totalRetrans() >= 0);
+    }
+
+    @Test
+    public void testTcpInfo() throws Exception {
+        EventLoopGroup group = new EpollEventLoopGroup(1);
+
+        try {
+            Bootstrap bootstrap = new Bootstrap();
+            EpollSocketChannel ch = (EpollSocketChannel) bootstrap.group(group)
+                    .channel(EpollSocketChannel.class)
+                    .handler(new ChannelInboundHandlerAdapter())
+                    .bind(new InetSocketAddress(0)).syncUninterruptibly().channel();
+            EpollTcpInfo info = ch.tcpInfo();
+            assertTcpInfo0(info);
+            ch.close().syncUninterruptibly();
+        } finally {
+            group.shutdownGracefully();
+        }
+    }
+
+    @Test
+    public void testTcpInfoReuse() throws Exception {
+        EventLoopGroup group = new EpollEventLoopGroup(1);
+
+        try {
+            Bootstrap bootstrap = new Bootstrap();
+            EpollSocketChannel ch = (EpollSocketChannel) bootstrap.group(group)
+                    .channel(EpollSocketChannel.class)
+                    .handler(new ChannelInboundHandlerAdapter())
+                    .bind(new InetSocketAddress(0)).syncUninterruptibly().channel();
+            EpollTcpInfo info = new EpollTcpInfo();
+            ch.tcpInfo(info);
+            assertTcpInfo0(info);
+            ch.close().syncUninterruptibly();
+        } finally {
+            group.shutdownGracefully();
+        }
     }
 }

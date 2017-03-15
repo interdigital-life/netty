@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.buffer.ByteBufAllocator;
@@ -151,16 +152,16 @@ public class EpollChannelConfig extends DefaultChannelConfig {
         }
         try {
             switch (mode) {
-            case EDGE_TRIGGERED:
-                checkChannelNotRegistered();
-                channel.setFlag(Native.EPOLLET);
-                break;
-            case LEVEL_TRIGGERED:
-                checkChannelNotRegistered();
-                channel.clearFlag(Native.EPOLLET);
-                break;
-            default:
-                throw new Error();
+                case EDGE_TRIGGERED:
+                    checkChannelNotRegistered();
+                    channel.setFlag(Native.EPOLLET);
+                    break;
+                case LEVEL_TRIGGERED:
+                    checkChannelNotRegistered();
+                    channel.clearFlag(Native.EPOLLET);
+                    break;
+                default:
+                    throw new Error();
             }
         } catch (IOException e) {
             throw new ChannelException(e);

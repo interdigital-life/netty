@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.bootstrap.Bootstrap;
@@ -28,6 +29,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.unix.FileDescriptor;
 import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import java.io.File;
@@ -36,8 +38,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.assertEquals;
 
 public class EpollSpliceTest {
 
@@ -132,7 +132,7 @@ public class EpollSpliceTest {
         cb.handler(ch);
         Channel cc = cb.connect(pc.localAddress()).syncUninterruptibly().channel();
 
-        for (int i = 0; i < data.length;) {
+        for (int i = 0; i < data.length; ) {
             int length = Math.min(random.nextInt(1024 * 64), data.length - i);
             ByteBuf buf = Unpooled.wrappedBuffer(data, i, length);
             cc.writeAndFlush(buf);
@@ -208,7 +208,7 @@ public class EpollSpliceTest {
         cb.handler(new ChannelInboundHandlerAdapter());
         Channel cc = cb.connect(sc.localAddress()).syncUninterruptibly().channel();
 
-        for (int i = 0; i < data.length;) {
+        for (int i = 0; i < data.length; ) {
             int length = Math.min(random.nextInt(1024 * 64), data.length - i);
             ByteBuf buf = Unpooled.wrappedBuffer(data, i, length);
             cc.writeAndFlush(buf);
@@ -246,8 +246,8 @@ public class EpollSpliceTest {
     }
 
     private static class EchoHandler extends SimpleChannelInboundHandler<ByteBuf> {
-        volatile Channel channel;
         final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
+        volatile Channel channel;
         volatile int counter;
 
         @Override
@@ -262,7 +262,7 @@ public class EpollSpliceTest {
             in.readBytes(actual);
 
             int lastIdx = counter;
-            for (int i = 0; i < actual.length; i ++) {
+            for (int i = 0; i < actual.length; i++) {
                 assertEquals(data[i + lastIdx], actual[i]);
             }
 
@@ -289,11 +289,10 @@ public class EpollSpliceTest {
     }
 
     private static class SpliceHandler extends ChannelInboundHandlerAdapter {
+        final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
         private final File file;
-
         volatile Channel channel;
         volatile ChannelFuture future;
-        final AtomicReference<Throwable> exception = new AtomicReference<Throwable>();
 
         public SpliceHandler(File file) {
             this.file = file;

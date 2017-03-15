@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.unix;
 
 import io.netty.buffer.ByteBufAllocator;
@@ -63,6 +64,11 @@ public interface DomainSocketChannelConfig extends ChannelConfig {
     DomainSocketChannelConfig setMessageSizeEstimator(MessageSizeEstimator estimator);
 
     /**
+     * Return the {@link DomainSocketReadMode} for the channel.
+     */
+    DomainSocketReadMode getReadMode();
+
+    /**
      * Change the {@link DomainSocketReadMode} for the channel. The default is
      * {@link DomainSocketReadMode#BYTES} which means bytes will be read from the
      * {@link io.netty.channel.Channel} and passed through the pipeline. If
@@ -72,9 +78,4 @@ public interface DomainSocketChannelConfig extends ChannelConfig {
      * This setting can be modified on the fly if needed.
      */
     DomainSocketChannelConfig setReadMode(DomainSocketReadMode mode);
-
-    /**
-     * Return the {@link DomainSocketReadMode} for the channel.
-     */
-    DomainSocketReadMode getReadMode();
 }

@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.unix.FileDescriptor;
@@ -25,7 +26,7 @@ public final class Epoll {
 
     private static final Throwable UNAVAILABILITY_CAUSE;
 
-    static  {
+    static {
         Throwable cause = null;
         FileDescriptor epollFd = null;
         FileDescriptor eventFd = null;
@@ -59,6 +60,9 @@ public final class Epoll {
         }
     }
 
+    private Epoll() {
+    }
+
     /**
      * Returns {@code true} if and only if the
      * <a href="http://netty.io/wiki/native-transports.html">{@code netty-transport-native-epoll}</a> is available.
@@ -89,6 +93,4 @@ public final class Epoll {
     public static Throwable unavailabilityCause() {
         return UNAVAILABILITY_CAUSE;
     }
-
-    private Epoll() { }
 }

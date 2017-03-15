@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.Channel;
@@ -20,14 +21,12 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.ServerDomainSocketChannel;
 import io.netty.channel.unix.Socket;
+import static io.netty.channel.unix.Socket.newSocketDomain;
 import io.netty.util.internal.logging.InternalLogger;
 import io.netty.util.internal.logging.InternalLoggerFactory;
 
 import java.io.File;
 import java.net.SocketAddress;
-
-import static io.netty.channel.unix.Socket.newSocketDomain;
-
 
 public final class EpollServerDomainSocketChannel extends AbstractEpollServerChannel
         implements ServerDomainSocketChannel {

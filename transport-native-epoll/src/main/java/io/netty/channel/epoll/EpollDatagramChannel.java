@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.buffer.ByteBuf;
@@ -31,6 +32,7 @@ import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.unix.DatagramSocketAddress;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.Socket;
+import static io.netty.channel.unix.Socket.newSocketDgram;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
 
@@ -45,8 +47,6 @@ import java.nio.channels.NotYetConnectedException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.netty.channel.unix.Socket.newSocketDgram;
-
 /**
  * {@link DatagramChannel} implementation that uses linux EPOLL Edge-Triggered Mode for
  * maximal performance.
@@ -55,15 +55,14 @@ public final class EpollDatagramChannel extends AbstractEpollChannel implements 
     private static final ChannelMetadata METADATA = new ChannelMetadata(true);
     private static final String EXPECTED_TYPES =
             " (expected: " + StringUtil.simpleClassName(DatagramPacket.class) + ", " +
-            StringUtil.simpleClassName(AddressedEnvelope.class) + '<' +
-            StringUtil.simpleClassName(ByteBuf.class) + ", " +
-            StringUtil.simpleClassName(InetSocketAddress.class) + ">, " +
-            StringUtil.simpleClassName(ByteBuf.class) + ')';
-
+                    StringUtil.simpleClassName(AddressedEnvelope.class) + '<' +
+                    StringUtil.simpleClassName(ByteBuf.class) + ", " +
+                    StringUtil.simpleClassName(InetSocketAddress.class) + ">, " +
+                    StringUtil.simpleClassName(ByteBuf.class) + ')';
+    private final EpollDatagramChannelConfig config;
     private volatile InetSocketAddress local;
     private volatile InetSocketAddress remote;
     private volatile boolean connected;
-    private final EpollDatagramChannelConfig config;
 
     public EpollDatagramChannel() {
         super(newSocketDgram(), Native.EPOLLIN);
@@ -287,7 +286,7 @@ public final class EpollDatagramChannel extends AbstractEpollChannel implements 
 
     @Override
     protected void doWrite(ChannelOutboundBuffer in) throws Exception {
-        for (;;) {
+        for (; ; ) {
             Object msg = in.current();
             if (msg == null) {
                 // Wrote all messages.
@@ -385,7 +384,7 @@ public final class EpollDatagramChannel extends AbstractEpollChannel implements 
 
             writtenBytes = fd().sendToAddresses(array.memoryAddress(0),
                     cnt, remoteAddress.getAddress(), remoteAddress.getPort());
-        } else  {
+        } else {
             ByteBuffer nioData = data.internalNioBuffer(data.readerIndex(), data.readableBytes());
             writtenBytes = fd().sendTo(nioData, nioData.position(), nioData.limit(),
                     remoteAddress.getAddress(), remoteAddress.getPort());
@@ -442,7 +441,7 @@ public final class EpollDatagramChannel extends AbstractEpollChannel implements 
             @SuppressWarnings("unchecked")
             AddressedEnvelope<Object, SocketAddress> e = (AddressedEnvelope<Object, SocketAddress>) msg;
             if (e.content() instanceof ByteBuf &&
-                (e.recipient() == null || e.recipient() instanceof InetSocketAddress)) {
+                    (e.recipient() == null || e.recipient() instanceof InetSocketAddress)) {
 
                 ByteBuf content = (ByteBuf) e.content();
                 if (content.hasMemoryAddress()) {
@@ -544,7 +543,7 @@ public final class EpollDatagramChannel extends AbstractEpollChannel implements 
                         if (data.hasMemoryAddress()) {
                             // has a memory address so use optimized call
                             remoteAddress = fd().recvFromAddress(data.memoryAddress(), data.writerIndex(),
-                                                                 data.capacity());
+                                    data.capacity());
                         } else {
                             ByteBuffer nioData = data.internalNioBuffer(data.writerIndex(), data.writableBytes());
                             remoteAddress = fd().recvFrom(nioData, nioData.position(), nioData.limit());
@@ -572,7 +571,7 @@ public final class EpollDatagramChannel extends AbstractEpollChannel implements 
                 }
 
                 int size = readBuf.size();
-                for (int i = 0; i < size; i ++) {
+                for (int i = 0; i < size; i++) {
                     readPending = false;
                     pipeline.fireChannelRead(readBuf.get(i));
                 }

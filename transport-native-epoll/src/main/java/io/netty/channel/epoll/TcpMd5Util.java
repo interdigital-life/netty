@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.util.internal.ObjectUtil;
@@ -27,8 +28,11 @@ import java.util.Map.Entry;
 
 final class TcpMd5Util {
 
+    private TcpMd5Util() {
+    }
+
     static Collection<InetAddress> newTcpMd5Sigs(AbstractEpollChannel channel, Collection<InetAddress> current,
-                                         Map<InetAddress, byte[]> newKeys) throws IOException {
+                                                 Map<InetAddress, byte[]> newKeys) throws IOException {
         ObjectUtil.checkNotNull(channel, "channel");
         ObjectUtil.checkNotNull(current, "current");
         ObjectUtil.checkNotNull(newKeys, "newKeys");
@@ -47,7 +51,7 @@ final class TcpMd5Util {
             }
             if (key.length > Native.TCP_MD5SIG_MAXKEYLEN) {
                 throw new IllegalArgumentException("newKeys[" + e.getKey() +
-                    "] has a key with invalid length; should not exceed the maximum length (" +
+                        "] has a key with invalid length; should not exceed the maximum length (" +
                         Native.TCP_MD5SIG_MAXKEYLEN + ')');
             }
         }
@@ -71,8 +75,5 @@ final class TcpMd5Util {
         }
 
         return addresses;
-    }
-
-    private TcpMd5Util() {
     }
 }

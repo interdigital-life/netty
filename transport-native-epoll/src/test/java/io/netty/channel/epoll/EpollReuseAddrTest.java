@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.bootstrap.AbstractBootstrap;
@@ -46,6 +47,7 @@ public class EpollReuseAddrTest {
     private static final int MAJOR;
     private static final int MINOR;
     private static final int BUGFIX;
+
     static {
         String kernelVersion = Native.KERNEL_VERSION;
         int index = kernelVersion.indexOf('-');
@@ -66,18 +68,6 @@ public class EpollReuseAddrTest {
         }
     }
 
-    @Test
-    public void testMultipleBindSocketChannelWithoutReusePortFails() {
-        Assume.assumeTrue(versionEqOrGt(3, 9, 0));
-        testMultipleBindDatagramChannelWithoutReusePortFails0(createServerBootstrap());
-    }
-
-    @Test
-    public void testMultipleBindDatagramChannelWithoutReusePortFails() {
-        Assume.assumeTrue(versionEqOrGt(3, 9, 0));
-        testMultipleBindDatagramChannelWithoutReusePortFails0(createBootstrap());
-    }
-
     private static void testMultipleBindDatagramChannelWithoutReusePortFails0(AbstractBootstrap<?, ?> bootstrap) {
         bootstrap.handler(new DummyHandler());
         ChannelFuture future = bootstrap.bind().syncUninterruptibly();
@@ -88,6 +78,53 @@ public class EpollReuseAddrTest {
             Assert.assertTrue(e instanceof IOException);
         }
         future.channel().close().syncUninterruptibly();
+    }
+
+    private static ServerBootstrap createServerBootstrap() {
+        ServerBootstrap bootstrap = new ServerBootstrap();
+        bootstrap.group(EpollSocketTestPermutation.EPOLL_BOSS_GROUP, EpollSocketTestPermutation.EPOLL_WORKER_GROUP);
+        bootstrap.channel(EpollServerSocketChannel.class);
+        bootstrap.childHandler(new DummyHandler());
+        InetSocketAddress address = new InetSocketAddress(NetUtil.LOCALHOST, TestUtils.getFreePort());
+        bootstrap.localAddress(address);
+        return bootstrap;
+    }
+
+    private static Bootstrap createBootstrap() {
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(EpollSocketTestPermutation.EPOLL_WORKER_GROUP);
+        bootstrap.channel(EpollDatagramChannel.class);
+        InetSocketAddress address = new InetSocketAddress(NetUtil.LOCALHOST, TestUtils.getFreePort());
+        bootstrap.localAddress(address);
+        return bootstrap;
+    }
+
+    private static boolean versionEqOrGt(int major, int minor, int bugfix) {
+        if (MAJOR > major) {
+            return true;
+        }
+        if (MAJOR == major) {
+            if (MINOR > minor) {
+                return true;
+            } else if (MINOR == minor) {
+                if (BUGFIX >= bugfix) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Test
+    public void testMultipleBindSocketChannelWithoutReusePortFails() {
+        Assume.assumeTrue(versionEqOrGt(3, 9, 0));
+        testMultipleBindDatagramChannelWithoutReusePortFails0(createServerBootstrap());
+    }
+
+    @Test
+    public void testMultipleBindDatagramChannelWithoutReusePortFails() {
+        Assume.assumeTrue(versionEqOrGt(3, 9, 0));
+        testMultipleBindDatagramChannelWithoutReusePortFails0(createBootstrap());
     }
 
     @Test(timeout = 10000)
@@ -157,7 +194,7 @@ public class EpollReuseAddrTest {
         };
 
         ExecutorService executor = Executors.newFixedThreadPool(count);
-        for (int i = 0 ; i < count; i++) {
+        for (int i = 0; i < count; i++) {
             executor.execute(r);
         }
         latch.await();
@@ -166,41 +203,6 @@ public class EpollReuseAddrTest {
         future2.channel().close().syncUninterruptibly();
         Assert.assertTrue(received1.get());
         Assert.assertTrue(received2.get());
-    }
-
-    private static ServerBootstrap createServerBootstrap() {
-        ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(EpollSocketTestPermutation.EPOLL_BOSS_GROUP, EpollSocketTestPermutation.EPOLL_WORKER_GROUP);
-        bootstrap.channel(EpollServerSocketChannel.class);
-        bootstrap.childHandler(new DummyHandler());
-        InetSocketAddress address = new InetSocketAddress(NetUtil.LOCALHOST, TestUtils.getFreePort());
-        bootstrap.localAddress(address);
-        return bootstrap;
-    }
-
-    private static Bootstrap createBootstrap() {
-        Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(EpollSocketTestPermutation.EPOLL_WORKER_GROUP);
-        bootstrap.channel(EpollDatagramChannel.class);
-        InetSocketAddress address = new InetSocketAddress(NetUtil.LOCALHOST, TestUtils.getFreePort());
-        bootstrap.localAddress(address);
-        return bootstrap;
-    }
-
-    private static boolean versionEqOrGt(int major, int minor, int bugfix)  {
-        if (MAJOR > major) {
-            return true;
-        }
-        if (MAJOR == major) {
-            if (MINOR > minor) {
-                return true;
-            } else if (MINOR == minor) {
-                if (BUGFIX >= bugfix) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     @ChannelHandler.Sharable
@@ -234,5 +236,6 @@ public class EpollReuseAddrTest {
     }
 
     @ChannelHandler.Sharable
-    private static final class DummyHandler extends ChannelHandlerAdapter { }
+    private static final class DummyHandler extends ChannelHandlerAdapter {
+    }
 }

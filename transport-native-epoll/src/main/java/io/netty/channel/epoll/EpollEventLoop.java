@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.EventLoop;
@@ -111,6 +112,18 @@ final class EpollEventLoop extends SingleThreadEventLoop {
         }
     }
 
+    private static void handleLoopException(Throwable t) {
+        logger.warn("Unexpected exception in the selector loop.", t);
+
+        // Prevent possible consecutive immediate failures that lead to
+        // excessive CPU consumption.
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            // Ignore.
+        }
+    }
+
     /**
      * Return a cleared {@link IovArray} that can be used for writes in this {@link EventLoop}.
      */
@@ -178,6 +191,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
             return submit(pendingTasksCallable).syncUninterruptibly().getNow();
         }
     }
+
     /**
      * Returns the percentage of the desired amount of time spent for I/O in the event loop.
      */
@@ -200,7 +214,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
         int selectCnt = 0;
         long currentTimeNanos = System.nanoTime();
         long selectDeadLineNanos = currentTimeNanos + delayNanos(currentTimeNanos);
-        for (;;) {
+        for (; ; ) {
             long timeoutMillis = (selectDeadLineNanos - currentTimeNanos + 500000L) / 1000000L;
             if (timeoutMillis <= 0) {
                 if (selectCnt == 0) {
@@ -221,7 +235,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
             }
 
             int selectedKeys = Native.epollWait(epollFd.intValue(), events, (int) timeoutMillis);
-            selectCnt ++;
+            selectCnt++;
 
             if (selectedKeys != 0 || oldWakenUp || wakenUp == 1 || hasTasks() || hasScheduledTasks()) {
                 // - Selected something,
@@ -237,7 +251,7 @@ final class EpollEventLoop extends SingleThreadEventLoop {
 
     @Override
     protected void run() {
-        for (;;) {
+        for (; ; ) {
             try {
                 int strategy = selectStrategy.calculateStrategy(selectNowSupplier, hasTasks());
                 switch (strategy) {
@@ -325,18 +339,6 @@ final class EpollEventLoop extends SingleThreadEventLoop {
         }
     }
 
-    private static void handleLoopException(Throwable t) {
-        logger.warn("Unexpected exception in the selector loop.", t);
-
-        // Prevent possible consecutive immediate failures that lead to
-        // excessive CPU consumption.
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            // Ignore.
-        }
-    }
-
     private void closeAll() {
         try {
             Native.epollWait(epollFd.intValue(), events, 0);
@@ -345,17 +347,17 @@ final class EpollEventLoop extends SingleThreadEventLoop {
         }
         Collection<AbstractEpollChannel> array = new ArrayList<AbstractEpollChannel>(channels.size());
 
-        for (AbstractEpollChannel channel: channels.values()) {
+        for (AbstractEpollChannel channel : channels.values()) {
             array.add(channel);
         }
 
-        for (AbstractEpollChannel ch: array) {
+        for (AbstractEpollChannel ch : array) {
             ch.unsafe().close(ch.unsafe().voidPromise());
         }
     }
 
     private void processReady(EpollEventArray events, int ready) {
-        for (int i = 0; i < ready; i ++) {
+        for (int i = 0; i < ready; i++) {
             final int fd = events.fd(i);
             if (fd == eventFd.intValue()) {
                 // consume wakeup event

@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.buffer.ByteBuf;
@@ -31,6 +32,7 @@ import io.netty.channel.socket.ChannelInputShutdownReadComplete;
 import io.netty.channel.unix.Socket;
 import io.netty.channel.unix.UnixChannel;
 import io.netty.util.ReferenceCountUtil;
+import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -38,17 +40,14 @@ import java.nio.ByteBuffer;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.UnresolvedAddressException;
 
-import static io.netty.util.internal.ObjectUtil.checkNotNull;
-
 abstract class AbstractEpollChannel extends AbstractChannel implements UnixChannel {
     private static final ChannelMetadata METADATA = new ChannelMetadata(false);
     private final int readFlag;
     private final Socket fileDescriptor;
     protected int flags = Native.EPOLLET;
+    protected volatile boolean active;
     boolean inputClosedSeenErrorOnRead;
     boolean epollInReadyRunnablePending;
-
-    protected volatile boolean active;
 
     AbstractEpollChannel(Socket fd, int flag) {
         this(null, fd, flag, false);
@@ -67,6 +66,19 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
             return fd.getSoError() == 0;
         } catch (IOException e) {
             throw new ChannelException(e);
+        }
+    }
+
+    private static ByteBuf newDirectBuffer0(Object holder, ByteBuf buf, ByteBufAllocator alloc, int capacity) {
+        final ByteBuf directBuf = alloc.directBuffer(capacity);
+        directBuf.writeBytes(buf, buf.readerIndex(), capacity);
+        ReferenceCountUtil.safeRelease(holder);
+        return directBuf;
+    }
+
+    protected static void checkResolvable(InetSocketAddress addr) {
+        if (addr.isUnresolved()) {
+            throw new UnresolvedAddressException();
         }
     }
 
@@ -185,7 +197,7 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
                     }
                 });
             }
-        } else  {
+        } else {
             // The EventLoop is not registered atm so just update the flags so the correct value
             // will be used once the channel is registered
             flags &= ~readFlag;
@@ -242,19 +254,6 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
         directBuf.writeBytes(buf, buf.readerIndex(), readableBytes);
         ReferenceCountUtil.safeRelease(holder);
         return directBuf;
-    }
-
-    private static ByteBuf newDirectBuffer0(Object holder, ByteBuf buf, ByteBufAllocator alloc, int capacity) {
-        final ByteBuf directBuf = alloc.directBuffer(capacity);
-        directBuf.writeBytes(buf, buf.readerIndex(), capacity);
-        ReferenceCountUtil.safeRelease(holder);
-        return directBuf;
-    }
-
-    protected static void checkResolvable(InetSocketAddress addr) {
-        if (addr.isUnresolved()) {
-            throw new UnresolvedAddressException();
-        }
     }
 
     /**
@@ -325,9 +324,6 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
     }
 
     protected abstract class AbstractEpollUnsafe extends AbstractUnsafe {
-        boolean readPending;
-        boolean maybeMoreDataToRead;
-        private EpollRecvByteAllocatorHandle allocHandle;
         private final Runnable epollInReadyRunnable = new Runnable() {
             @Override
             public void run() {
@@ -335,13 +331,18 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
                 epollInReady();
             }
         };
+        boolean readPending;
+        boolean maybeMoreDataToRead;
+        private EpollRecvByteAllocatorHandle allocHandle;
 
         /**
          * Called once EPOLLIN event is ready to be processed
          */
         abstract void epollInReady();
 
-        final void epollInBefore() { maybeMoreDataToRead = false; }
+        final void epollInBefore() {
+            maybeMoreDataToRead = false;
+        }
 
         final void epollInFinally(ChannelConfig config) {
             maybeMoreDataToRead = allocHandle.isEdgeTriggered() && allocHandle.maybeMoreDataToRead();
@@ -450,6 +451,7 @@ abstract class AbstractEpollChannel extends AbstractChannel implements UnixChann
 
         /**
          * Create a new {@link EpollRecvByteAllocatorHandle} instance.
+         *
          * @param handle The handle to wrap with EPOLL specific logic.
          */
         EpollRecvByteAllocatorHandle newEpollHandle(RecvByteBufAllocator.ExtendedHandle handle) {

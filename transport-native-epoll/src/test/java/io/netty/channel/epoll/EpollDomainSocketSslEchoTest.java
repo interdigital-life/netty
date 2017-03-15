@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.bootstrap.Bootstrap;
@@ -31,8 +32,8 @@ public class EpollDomainSocketSslEchoTest extends SocketSslEchoTest {
             boolean autoRead, boolean useChunkedWriteHandler, boolean useCompositeByteBuf) {
 
         super(serverCtx, clientCtx, renegotiation,
-              serverUsesDelegatedTaskExecutor, clientUsesDelegatedTaskExecutor,
-              autoRead, useChunkedWriteHandler, useCompositeByteBuf);
+                serverUsesDelegatedTaskExecutor, clientUsesDelegatedTaskExecutor,
+                autoRead, useChunkedWriteHandler, useCompositeByteBuf);
     }
 
     @Override

@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.bootstrap.Bootstrap;
@@ -22,12 +23,11 @@ import io.netty.channel.unix.Errors;
 import io.netty.channel.unix.Errors.NativeIoException;
 import io.netty.testsuite.transport.TestsuitePermutation;
 import io.netty.testsuite.transport.socket.SocketRstTest;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class EpollSocketRstTest extends SocketRstTest {
     @Override
@@ -43,7 +43,7 @@ public class EpollSocketRstTest extends SocketRstTest {
         }
 
         assertTrue("actual [type, message]: [" + cause.getClass() + ", " + cause.getMessage() + "]",
-                   cause instanceof NativeIoException);
+                cause instanceof NativeIoException);
         assertEquals(Errors.ERRNO_ECONNRESET_NEGATIVE, ((NativeIoException) cause).expectedErr());
     }
 }

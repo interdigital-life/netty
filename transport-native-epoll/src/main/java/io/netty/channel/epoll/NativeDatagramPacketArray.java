@@ -13,12 +13,13 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
-import static io.netty.channel.unix.NativeInetAddress.ipv4MappedIpv6Address;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelOutboundBuffer;
 import io.netty.channel.socket.DatagramPacket;
+import static io.netty.channel.unix.NativeInetAddress.ipv4MappedIpv6Address;
 import io.netty.util.concurrent.FastThreadLocal;
 
 import java.net.Inet6Address;
@@ -55,6 +56,17 @@ final class NativeDatagramPacketArray implements ChannelOutboundBuffer.MessagePr
         for (int i = 0; i < packets.length; i++) {
             packets[i] = new NativeDatagramPacket();
         }
+    }
+
+    /**
+     * Returns a {@link NativeDatagramPacketArray} which is filled with the flushed messages of
+     * {@link ChannelOutboundBuffer}.
+     */
+    static NativeDatagramPacketArray getInstance(ChannelOutboundBuffer buffer) throws Exception {
+        NativeDatagramPacketArray array = ARRAY.get();
+        array.count = 0;
+        buffer.forEachFlushedMessage(array);
+        return array;
     }
 
     /**
@@ -97,17 +109,6 @@ final class NativeDatagramPacketArray implements ChannelOutboundBuffer.MessagePr
      */
     NativeDatagramPacket[] packets() {
         return packets;
-    }
-
-    /**
-     * Returns a {@link NativeDatagramPacketArray} which is filled with the flushed messages of
-     * {@link ChannelOutboundBuffer}.
-     */
-    static NativeDatagramPacketArray getInstance(ChannelOutboundBuffer buffer) throws Exception {
-        NativeDatagramPacketArray array = ARRAY.get();
-        array.count = 0;
-        buffer.forEachFlushedMessage(array);
-        return array;
     }
 
     /**

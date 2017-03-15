@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.unix;
 
 import java.net.Inet6Address;
@@ -25,19 +26,9 @@ import java.net.UnknownHostException;
  */
 public final class NativeInetAddress {
     private static final byte[] IPV4_MAPPED_IPV6_PREFIX = {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xff, (byte) 0xff };
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, (byte) 0xff, (byte) 0xff};
     final byte[] address;
     final int scopeId;
-
-    public static NativeInetAddress newInstance(InetAddress addr) {
-        byte[] bytes = addr.getAddress();
-        if (addr instanceof Inet6Address) {
-            return new NativeInetAddress(bytes, ((Inet6Address) addr).getScopeId());
-        } else {
-            // convert to ipv4 mapped ipv6 address;
-            return new NativeInetAddress(ipv4MappedIpv6Address(bytes));
-        }
-    }
 
     public NativeInetAddress(byte[] address, int scopeId) {
         this.address = address;
@@ -48,12 +39,14 @@ public final class NativeInetAddress {
         this(address, 0);
     }
 
-    public byte[] address() {
-        return address;
-    }
-
-    public int scopeId() {
-        return scopeId;
+    public static NativeInetAddress newInstance(InetAddress addr) {
+        byte[] bytes = addr.getAddress();
+        if (addr instanceof Inet6Address) {
+            return new NativeInetAddress(bytes, ((Inet6Address) addr).getScopeId());
+        } else {
+            // convert to ipv4 mapped ipv6 address;
+            return new NativeInetAddress(ipv4MappedIpv6Address(bytes));
+        }
     }
 
     public static byte[] ipv4MappedIpv6Address(byte[] ipv4) {
@@ -86,7 +79,7 @@ public final class NativeInetAddress {
                 case 24:
                     byte[] ipv6 = new byte[16];
                     System.arraycopy(addr, offset, ipv6, 0, 16);
-                    int scopeId = decodeInt(addr, offset + len  - 8);
+                    int scopeId = decodeInt(addr, offset + len - 8);
                     address = Inet6Address.getByAddress(null, ipv6, scopeId);
                     break;
                 default:
@@ -99,9 +92,17 @@ public final class NativeInetAddress {
     }
 
     static int decodeInt(byte[] addr, int index) {
-        return  (addr[index]     & 0xff) << 24 |
+        return (addr[index] & 0xff) << 24 |
                 (addr[index + 1] & 0xff) << 16 |
-                (addr[index + 2] & 0xff) <<  8 |
+                (addr[index + 2] & 0xff) << 8 |
                 addr[index + 3] & 0xff;
+    }
+
+    public byte[] address() {
+        return address;
+    }
+
+    public int scopeId() {
+        return scopeId;
     }
 }

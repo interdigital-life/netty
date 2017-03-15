@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.buffer.ByteBufAllocator;
@@ -52,7 +53,7 @@ public final class EpollDatagramChannelConfig extends EpollChannelConfig impleme
                 EpollChannelOption.SO_REUSEPORT);
     }
 
-    @SuppressWarnings({ "unchecked", "deprecation" })
+    @SuppressWarnings({"unchecked", "deprecation"})
     @Override
     public <T> T getOption(ChannelOption<T> option) {
         if (option == ChannelOption.SO_BROADCAST) {
@@ -125,15 +126,15 @@ public final class EpollDatagramChannelConfig extends EpollChannelConfig impleme
         return true;
     }
 
+    boolean getActiveOnOpen() {
+        return activeOnOpen;
+    }
+
     private void setActiveOnOpen(boolean activeOnOpen) {
         if (channel.isRegistered()) {
             throw new IllegalStateException("Can only changed before channel was registered");
         }
         this.activeOnOpen = activeOnOpen;
-    }
-
-    boolean getActiveOnOpen() {
-        return activeOnOpen;
     }
 
     @Override

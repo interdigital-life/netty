@@ -13,17 +13,17 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.unix;
 
 import io.netty.channel.epoll.Epoll;
-import java.io.File;
 import org.junit.After;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
-
-import static org.junit.Assert.*;
 
 public class SocketTest {
 
@@ -111,7 +111,7 @@ public class SocketTest {
             s1.listen(1);
 
             assertTrue(s2.connect(dsa));
-            byte [] addr = new byte[64];
+            byte[] addr = new byte[64];
             s1.accept(addr);
             PeerCredentials pc = s1.getPeerCredentials();
             assertNotEquals(pc.uid(), -1);

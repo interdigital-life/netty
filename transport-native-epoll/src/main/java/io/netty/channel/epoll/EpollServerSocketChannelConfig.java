@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.buffer.ByteBufAllocator;
@@ -234,23 +235,23 @@ public final class EpollServerSocketChannelConfig extends EpollServerChannelConf
     }
 
     /**
-     * Set the {@code TCP_DEFER_ACCEPT} option on the socket. See {@code man 7 tcp} for more details.
+     * Returns a positive value if <a href="http://linux.die.net/man/7/tcp">TCP_DEFER_ACCEPT</a> is enabled.
      */
-    public EpollServerSocketChannelConfig setTcpDeferAccept(int deferAccept) {
+    public int getTcpDeferAccept() {
         try {
-            channel.fd().setTcpDeferAccept(deferAccept);
-            return this;
+            return channel.fd().getTcpDeferAccept();
         } catch (IOException e) {
             throw new ChannelException(e);
         }
     }
 
     /**
-     * Returns a positive value if <a href="http://linux.die.net/man/7/tcp">TCP_DEFER_ACCEPT</a> is enabled.
+     * Set the {@code TCP_DEFER_ACCEPT} option on the socket. See {@code man 7 tcp} for more details.
      */
-    public int getTcpDeferAccept() {
+    public EpollServerSocketChannelConfig setTcpDeferAccept(int deferAccept) {
         try {
-            return channel.fd().getTcpDeferAccept();
+            channel.fd().setTcpDeferAccept(deferAccept);
+            return this;
         } catch (IOException e) {
             throw new ChannelException(e);
         }

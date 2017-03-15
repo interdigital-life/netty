@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.Channel;
@@ -21,6 +22,7 @@ import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.Socket;
+import static io.netty.channel.unix.Socket.newSocketStream;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.internal.PlatformDependent;
 
@@ -34,8 +36,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Executor;
-
-import static io.netty.channel.unix.Socket.newSocketStream;
 
 /**
  * {@link SocketChannel} implementation that uses linux EPOLL Edge-Triggered Mode for
@@ -92,6 +92,25 @@ public final class EpollSocketChannel extends AbstractEpollStreamChannel impleme
         remote = fd.remoteAddress();
         local = fd.localAddress();
         config = new EpollSocketChannelConfig(this);
+    }
+
+    private static InetSocketAddress computeRemoteAddr(InetSocketAddress remoteAddr, InetSocketAddress osRemoteAddr) {
+        if (osRemoteAddr != null) {
+            if (PlatformDependent.javaVersion() >= 7) {
+                try {
+                    // Only try to construct a new InetSocketAddress if we using java >= 7 as getHostString() does not
+                    // exists in earlier releases and so the retrieval of the hostname could block the EventLoop if a
+                    // reverse lookup would be needed.
+                    return new InetSocketAddress(InetAddress.getByAddress(remoteAddr.getHostString(),
+                            osRemoteAddr.getAddress().getAddress()),
+                            osRemoteAddr.getPort());
+                } catch (UnknownHostException ignore) {
+                    // Should never happen but fallback to osRemoteAddr anyway.
+                }
+            }
+            return osRemoteAddr;
+        }
+        return remoteAddr;
     }
 
     /**
@@ -156,25 +175,6 @@ public final class EpollSocketChannel extends AbstractEpollStreamChannel impleme
         return new EpollSocketChannelUnsafe();
     }
 
-    private static InetSocketAddress computeRemoteAddr(InetSocketAddress remoteAddr, InetSocketAddress osRemoteAddr) {
-        if (osRemoteAddr != null) {
-            if (PlatformDependent.javaVersion() >= 7) {
-                try {
-                    // Only try to construct a new InetSocketAddress if we using java >= 7 as getHostString() does not
-                    // exists in earlier releases and so the retrieval of the hostname could block the EventLoop if a
-                    // reverse lookup would be needed.
-                    return new InetSocketAddress(InetAddress.getByAddress(remoteAddr.getHostString(),
-                            osRemoteAddr.getAddress().getAddress()),
-                            osRemoteAddr.getPort());
-                } catch (UnknownHostException ignore) {
-                    // Should never happen but fallback to osRemoteAddr anyway.
-                }
-            }
-            return osRemoteAddr;
-        }
-        return remoteAddr;
-    }
-
     @Override
     protected boolean doConnect(SocketAddress remoteAddress, SocketAddress localAddress) throws Exception {
         if (localAddress != null) {
@@ -202,6 +202,10 @@ public final class EpollSocketChannel extends AbstractEpollStreamChannel impleme
         // See https://github.com/netty/netty/issues/3463
         local = fd().localAddress();
         return connected;
+    }
+
+    void setTcpMd5Sig(Map<InetAddress, byte[]> keys) throws IOException {
+        this.tcpMd5SigAddresses = TcpMd5Util.newTcpMd5Sigs(this, tcpMd5SigAddresses, keys);
     }
 
     private final class EpollSocketChannelUnsafe extends EpollStreamUnsafe {
@@ -235,9 +239,5 @@ public final class EpollSocketChannel extends AbstractEpollStreamChannel impleme
             }
             return false;
         }
-    }
-
-    void setTcpMd5Sig(Map<InetAddress, byte[]> keys) throws IOException {
-        this.tcpMd5SigAddresses = TcpMd5Util.newTcpMd5Sigs(this, tcpMd5SigAddresses, keys);
     }
 }

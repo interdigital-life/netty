@@ -13,8 +13,12 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.unix;
 
+import static io.netty.channel.unix.Errors.ioResult;
+import static io.netty.channel.unix.Errors.newIOException;
+import static io.netty.util.internal.ObjectUtil.checkNotNull;
 import io.netty.util.internal.ThrowableUtil;
 
 import java.io.File;
@@ -22,10 +26,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
-import static io.netty.channel.unix.Errors.ioResult;
-import static io.netty.channel.unix.Errors.newIOException;
-import static io.netty.util.internal.ObjectUtil.checkNotNull;
 
 /**
  * Native {@link FileDescriptor} implementation which allows to wrap an {@code int} and provide a
@@ -70,13 +70,13 @@ public class FileDescriptor {
     private static final int STATE_INPUT_SHUTDOWN_MASK = 1 << 1;
     private static final int STATE_OUTPUT_SHUTDOWN_MASK = 1 << 2;
     private static final int STATE_ALL_MASK = STATE_CLOSED_MASK |
-                                              STATE_INPUT_SHUTDOWN_MASK |
-                                              STATE_OUTPUT_SHUTDOWN_MASK;
+            STATE_INPUT_SHUTDOWN_MASK |
+            STATE_OUTPUT_SHUTDOWN_MASK;
+    final int fd;
     /**
      * Bit map = [Output Shutdown | Input Shutdown | Closed]
      */
     volatile int state;
-    final int fd;
 
     public FileDescriptor(int fd) {
         if (fd < 0) {
@@ -84,6 +84,74 @@ public class FileDescriptor {
         }
         this.fd = fd;
     }
+
+    /**
+     * Open a new {@link FileDescriptor} for the given path.
+     */
+    public static FileDescriptor from(String path) throws IOException {
+        checkNotNull(path, "path");
+        int res = open(path);
+        if (res < 0) {
+            throw newIOException("open", res);
+        }
+        return new FileDescriptor(res);
+    }
+
+    /**
+     * Open a new {@link FileDescriptor} for the given {@link File}.
+     */
+    public static FileDescriptor from(File file) throws IOException {
+        return from(checkNotNull(file, "file").getPath());
+    }
+
+    /**
+     * @return [0] = read end, [1] = write end
+     */
+    public static FileDescriptor[] pipe() throws IOException {
+        long res = newPipe();
+        if (res < 0) {
+            throw newIOException("newPipe", (int) res);
+        }
+        return new FileDescriptor[] {new FileDescriptor((int) (res >>> 32)), new FileDescriptor((int) res)};
+    }
+
+    static boolean isClosed(int state) {
+        return (state & STATE_CLOSED_MASK) != 0;
+    }
+
+    static boolean isInputShutdown(int state) {
+        return (state & STATE_INPUT_SHUTDOWN_MASK) != 0;
+    }
+
+    static boolean isOutputShutdown(int state) {
+        return (state & STATE_OUTPUT_SHUTDOWN_MASK) != 0;
+    }
+
+    static int inputShutdown(int state) {
+        return state | STATE_INPUT_SHUTDOWN_MASK;
+    }
+
+    static int outputShutdown(int state) {
+        return state | STATE_OUTPUT_SHUTDOWN_MASK;
+    }
+
+    private static native int open(String path);
+
+    private static native int close(int fd);
+
+    private static native int write(int fd, ByteBuffer buf, int pos, int limit);
+
+    private static native int writeAddress(int fd, long address, int pos, int limit);
+
+    private static native long writev(int fd, ByteBuffer[] buffers, int offset, int length);
+
+    private static native long writevAddresses(int fd, long memoryAddress, int length);
+
+    private static native int read(int fd, ByteBuffer buf, int pos, int limit);
+
+    private static native int readAddress(int fd, long address, int pos, int limit);
+
+    private static native long newPipe();
 
     /**
      * Return the int value of the filedescriptor.
@@ -96,7 +164,7 @@ public class FileDescriptor {
      * Close the file descriptor.
      */
     public void close() throws IOException {
-        for (;;) {
+        for (; ; ) {
             int state = this.state;
             if (isClosed(state)) {
                 return;
@@ -200,70 +268,7 @@ public class FileDescriptor {
         return fd;
     }
 
-    /**
-     * Open a new {@link FileDescriptor} for the given path.
-     */
-    public static FileDescriptor from(String path) throws IOException {
-        checkNotNull(path, "path");
-        int res = open(path);
-        if (res < 0) {
-            throw newIOException("open", res);
-        }
-        return new FileDescriptor(res);
-    }
-
-    /**
-     * Open a new {@link FileDescriptor} for the given {@link File}.
-     */
-    public static FileDescriptor from(File file) throws IOException {
-        return from(checkNotNull(file, "file").getPath());
-    }
-
-    /**
-     * @return [0] = read end, [1] = write end
-     */
-    public static FileDescriptor[] pipe() throws IOException {
-        long res = newPipe();
-        if (res < 0) {
-            throw newIOException("newPipe", (int) res);
-        }
-        return new FileDescriptor[]{new FileDescriptor((int) (res >>> 32)), new FileDescriptor((int) res)};
-    }
-
     final boolean casState(int expected, int update) {
         return stateUpdater.compareAndSet(this, expected, update);
     }
-
-    static boolean isClosed(int state) {
-        return (state & STATE_CLOSED_MASK) != 0;
-    }
-
-    static boolean isInputShutdown(int state) {
-        return (state & STATE_INPUT_SHUTDOWN_MASK) != 0;
-    }
-
-    static boolean isOutputShutdown(int state) {
-        return (state & STATE_OUTPUT_SHUTDOWN_MASK) != 0;
-    }
-
-    static int inputShutdown(int state) {
-        return state | STATE_INPUT_SHUTDOWN_MASK;
-    }
-
-    static int outputShutdown(int state) {
-        return state | STATE_OUTPUT_SHUTDOWN_MASK;
-    }
-
-    private static native int open(String path);
-    private static native int close(int fd);
-
-    private static native int write(int fd, ByteBuffer buf, int pos, int limit);
-    private static native int writeAddress(int fd, long address, int pos, int limit);
-    private static native long writev(int fd, ByteBuffer[] buffers, int offset, int length);
-    private static native long writevAddresses(int fd, long memoryAddress, int length);
-
-    private static native int read(int fd, ByteBuffer buf, int pos, int limit);
-    private static native int readAddress(int fd, long address, int pos, int limit);
-
-    private static native long newPipe();
 }

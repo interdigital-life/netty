@@ -13,8 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
+import static io.netty.channel.unix.NativeInetAddress.address;
 import io.netty.util.NetUtil;
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,8 +24,6 @@ import org.junit.Test;
 import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-
-import static io.netty.channel.unix.NativeInetAddress.address;
 
 public class NativeTest {
 

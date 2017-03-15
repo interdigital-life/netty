@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.buffer.ByteBufAllocator;
@@ -136,16 +137,16 @@ public final class EpollDomainSocketChannelConfig extends EpollChannelConfig
     }
 
     @Override
+    public DomainSocketReadMode getReadMode() {
+        return mode;
+    }
+
+    @Override
     public EpollDomainSocketChannelConfig setReadMode(DomainSocketReadMode mode) {
         if (mode == null) {
             throw new NullPointerException("mode");
         }
         this.mode = mode;
         return this;
-    }
-
-    @Override
-    public DomainSocketReadMode getReadMode() {
-        return mode;
     }
 }

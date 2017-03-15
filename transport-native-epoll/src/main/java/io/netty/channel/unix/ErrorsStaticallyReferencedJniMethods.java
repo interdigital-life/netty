@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.unix;
 
 /**
@@ -28,18 +29,30 @@ package io.netty.channel.unix;
  */
 final class ErrorsStaticallyReferencedJniMethods {
 
-    private ErrorsStaticallyReferencedJniMethods() { }
+    private ErrorsStaticallyReferencedJniMethods() {
+    }
 
     static native int errnoEBADF();
+
     static native int errnoEPIPE();
+
     static native int errnoECONNRESET();
+
     static native int errnoENOTCONN();
+
     static native int errnoEAGAIN();
+
     static native int errnoEWOULDBLOCK();
+
     static native int errnoEINPROGRESS();
+
     static native int errorECONNREFUSED();
+
     static native int errorEISCONN();
+
     static native int errorEALREADY();
+
     static native int errorENETUNREACH();
+
     static native String strError(int err);
 }

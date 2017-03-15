@@ -13,22 +13,10 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.DefaultFileRegion;
-import io.netty.channel.unix.Errors.NativeIoException;
-import io.netty.util.internal.NativeLibraryLoader;
-import io.netty.util.internal.PlatformDependent;
-import io.netty.util.internal.SystemPropertyUtil;
-import io.netty.channel.unix.FileDescriptor;
-import io.netty.channel.unix.NativeInetAddress;
-import io.netty.util.internal.ThrowableUtil;
-
-import java.io.IOException;
-import java.net.InetAddress;
-import java.nio.channels.ClosedChannelException;
-import java.util.Locale;
-
 import static io.netty.channel.epoll.NativeStaticallyReferencedJniMethods.epollerr;
 import static io.netty.channel.epoll.NativeStaticallyReferencedJniMethods.epollet;
 import static io.netty.channel.epoll.NativeStaticallyReferencedJniMethods.epollin;
@@ -44,9 +32,21 @@ import static io.netty.channel.epoll.NativeStaticallyReferencedJniMethods.uioMax
 import static io.netty.channel.unix.Errors.ERRNO_EAGAIN_NEGATIVE;
 import static io.netty.channel.unix.Errors.ERRNO_EPIPE_NEGATIVE;
 import static io.netty.channel.unix.Errors.ERRNO_EWOULDBLOCK_NEGATIVE;
+import io.netty.channel.unix.Errors.NativeIoException;
 import static io.netty.channel.unix.Errors.ioResult;
 import static io.netty.channel.unix.Errors.newConnectionResetException;
 import static io.netty.channel.unix.Errors.newIOException;
+import io.netty.channel.unix.FileDescriptor;
+import io.netty.channel.unix.NativeInetAddress;
+import io.netty.util.internal.NativeLibraryLoader;
+import io.netty.util.internal.PlatformDependent;
+import io.netty.util.internal.SystemPropertyUtil;
+import io.netty.util.internal.ThrowableUtil;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.nio.channels.ClosedChannelException;
+import java.util.Locale;
 
 /**
  * Native helper methods
@@ -54,24 +54,12 @@ import static io.netty.channel.unix.Errors.newIOException;
  * <p>Static members which call JNI methods must be defined in {@link NativeStaticallyReferencedJniMethods}.
  */
 public final class Native {
-    static {
-        try {
-            // First, try calling a side-effect free JNI method to see if the library was already
-            // loaded by the application.
-            offsetofEpollData();
-        } catch (UnsatisfiedLinkError ignore) {
-            // The library was not previously loaded, load it now.
-            loadNativeLibrary();
-        }
-    }
-
     // EventLoop operations and constants
     public static final int EPOLLIN = epollin();
     public static final int EPOLLOUT = epollout();
     public static final int EPOLLRDHUP = epollrdhup();
     public static final int EPOLLET = epollet();
     public static final int EPOLLERR = epollerr();
-
     public static final int IOV_MAX = iovMax();
     public static final int UIO_MAX_IOV = uioMaxIov();
     public static final boolean IS_SUPPORTING_SENDMMSG = isSupportingSendmmsg();
@@ -79,7 +67,6 @@ public final class Native {
     public static final long SSIZE_MAX = ssizeMax();
     public static final int TCP_MD5SIG_MAXKEYLEN = tcpMd5SigMaxKeyLen();
     public static final String KERNEL_VERSION = kernelVersion();
-
     private static final NativeIoException SENDFILE_CONNECTION_RESET_EXCEPTION;
     private static final NativeIoException SENDMMSG_CONNECTION_RESET_EXCEPTION;
     private static final NativeIoException SPLICE_CONNECTION_RESET_EXCEPTION;
@@ -91,6 +78,17 @@ public final class Native {
             new ClosedChannelException(), Native.class, "splice(...)");
 
     static {
+        try {
+            // First, try calling a side-effect free JNI method to see if the library was already
+            // loaded by the application.
+            offsetofEpollData();
+        } catch (UnsatisfiedLinkError ignore) {
+            // The library was not previously loaded, load it now.
+            loadNativeLibrary();
+        }
+    }
+
+    static {
         SENDFILE_CONNECTION_RESET_EXCEPTION = newConnectionResetException("syscall:sendfile(...)",
                 ERRNO_EPIPE_NEGATIVE);
         SENDMMSG_CONNECTION_RESET_EXCEPTION = newConnectionResetException("syscall:sendmmsg(...)",
@@ -99,12 +97,18 @@ public final class Native {
                 ERRNO_EPIPE_NEGATIVE);
     }
 
+    private Native() {
+        // utility
+    }
+
     public static FileDescriptor newEventFd() {
         return new FileDescriptor(eventFd());
     }
 
     private static native int eventFd();
+
     public static native void eventFdWrite(int fd, long value);
+
     public static native void eventFdRead(int fd);
 
     public static FileDescriptor newEpollCreate() {
@@ -120,6 +124,7 @@ public final class Native {
         }
         return ready;
     }
+
     private static native int epollWait0(int efd, long address, int len, int timeout);
 
     public static void epollCtlAdd(int efd, final int fd, final int flags) throws IOException {
@@ -128,6 +133,7 @@ public final class Native {
             throw newIOException("epoll_ctl", res);
         }
     }
+
     private static native int epollCtlAdd0(int efd, final int fd, final int flags);
 
     public static void epollCtlMod(int efd, final int fd, final int flags) throws IOException {
@@ -136,6 +142,7 @@ public final class Native {
             throw newIOException("epoll_ctl", res);
         }
     }
+
     private static native int epollCtlMod0(int efd, final int fd, final int flags);
 
     public static void epollCtlDel(int efd, final int fd) throws IOException {
@@ -144,6 +151,7 @@ public final class Native {
             throw newIOException("epoll_ctl", res);
         }
     }
+
     private static native int epollCtlDel0(int efd, final int fd);
 
     // File-descriptor operations
@@ -219,27 +227,47 @@ public final class Native {
 
     // Socket option operations
     public static native int isReuseAddress(int fd) throws IOException;
+
     public static native int isReusePort(int fd) throws IOException;
+
     public static native int getTcpNotSentLowAt(int fd) throws IOException;
+
     public static native int getTrafficClass(int fd) throws IOException;
+
     public static native int isBroadcast(int fd) throws IOException;
+
     public static native int getTcpKeepIdle(int fd) throws IOException;
+
     public static native int getTcpKeepIntvl(int fd) throws IOException;
+
     public static native int getTcpKeepCnt(int fd) throws IOException;
+
     public static native int getTcpUserTimeout(int milliseconds) throws IOException;
-    public static native int isIpFreeBind(int fd)throws IOException;
+
+    public static native int isIpFreeBind(int fd) throws IOException;
 
     public static native void setReuseAddress(int fd, int reuseAddress) throws IOException;
+
     public static native void setReusePort(int fd, int reuseAddress) throws IOException;
+
     public static native void setTcpFastopen(int fd, int tcpFastopenBacklog) throws IOException;
+
     public static native void setTcpNotSentLowAt(int fd, int tcpNotSentLowAt) throws IOException;
+
     public static native void setTrafficClass(int fd, int tcpNoDelay) throws IOException;
+
     public static native void setBroadcast(int fd, int broadcast) throws IOException;
+
     public static native void setTcpKeepIdle(int fd, int seconds) throws IOException;
+
     public static native void setTcpKeepIntvl(int fd, int seconds) throws IOException;
+
     public static native void setTcpKeepCnt(int fd, int probes) throws IOException;
-    public static native void setTcpUserTimeout(int fd, int milliseconds)throws IOException;
+
+    public static native void setTcpUserTimeout(int fd, int milliseconds) throws IOException;
+
     public static native void setIpFreeBind(int fd, int freeBind) throws IOException;
+
     public static void tcpInfo(int fd, EpollTcpInfo info) throws IOException {
         tcpInfo0(fd, info.info);
     }
@@ -255,11 +283,8 @@ public final class Native {
 
     // epoll_event related
     public static native int sizeofEpollEvent();
-    public static native int offsetofEpollData();
 
-    private Native() {
-        // utility
-    }
+    public static native int offsetofEpollData();
 
     private static void loadNativeLibrary() {
         String name = SystemPropertyUtil.get("os.name").toLowerCase(Locale.UK).trim();
@@ -267,6 +292,6 @@ public final class Native {
             throw new IllegalStateException("Only supported on Linux");
         }
         NativeLibraryLoader.load(SystemPropertyUtil.get("io.netty.packagePrefix", "").replace('.', '-') +
-            "netty-transport-native-epoll", PlatformDependent.getClassLoader(Native.class));
+                "netty-transport-native-epoll", PlatformDependent.getClassLoader(Native.class));
     }
 }

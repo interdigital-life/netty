@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.bootstrap.Bootstrap;
@@ -54,6 +55,16 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(EpollSocketTestPermutation.class);
 
+    public static DomainSocketAddress newSocketAddress() {
+        try {
+            File file = File.createTempFile("netty", "dsocket");
+            file.delete();
+            return new DomainSocketAddress(file);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     @Override
     public List<TestsuitePermutation.BootstrapComboFactory<ServerBootstrap, Bootstrap>> socket() {
 
@@ -73,7 +84,7 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
             @Override
             public ServerBootstrap newInstance() {
                 return new ServerBootstrap().group(EPOLL_BOSS_GROUP, EPOLL_WORKER_GROUP)
-                                            .channel(EpollServerSocketChannel.class);
+                        .channel(EpollServerSocketChannel.class);
             }
         });
         if (isServerFastOpen()) {
@@ -81,7 +92,7 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
                 @Override
                 public ServerBootstrap newInstance() {
                     ServerBootstrap serverBootstrap = new ServerBootstrap().group(EPOLL_BOSS_GROUP, EPOLL_WORKER_GROUP)
-                                                                           .channel(EpollServerSocketChannel.class);
+                            .channel(EpollServerSocketChannel.class);
                     serverBootstrap.option(EpollChannelOption.TCP_FASTOPEN, 5);
                     return serverBootstrap;
                 }
@@ -91,7 +102,7 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
             @Override
             public ServerBootstrap newInstance() {
                 return new ServerBootstrap().group(nioBossGroup, nioWorkerGroup)
-                                            .channel(NioServerSocketChannel.class);
+                        .channel(NioServerSocketChannel.class);
             }
         });
 
@@ -211,15 +222,5 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
                 return fastopen;
             }
         }) == 3;
-    }
-
-    public static DomainSocketAddress newSocketAddress() {
-        try {
-            File file = File.createTempFile("netty", "dsocket");
-            file.delete();
-            return new DomainSocketAddress(file);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }

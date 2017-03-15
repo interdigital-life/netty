@@ -50,9 +50,9 @@ public final class PeerCredentials {
     @Override
     public String toString() {
         return "UserCredentials["
-        + "pid=" + pid
-        + "; uid=" + uid
-        + "; gid=" + gid
-        + "]";
+                + "pid=" + pid
+                + "; uid=" + uid
+                + "; gid=" + gid
+                + "]";
     }
 }

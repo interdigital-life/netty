@@ -13,10 +13,20 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.unix;
 
 import io.netty.channel.ChannelException;
+import static io.netty.channel.unix.Errors.ERRNO_EAGAIN_NEGATIVE;
+import static io.netty.channel.unix.Errors.ERRNO_EINPROGRESS_NEGATIVE;
+import static io.netty.channel.unix.Errors.ERRNO_EWOULDBLOCK_NEGATIVE;
+import static io.netty.channel.unix.Errors.ioResult;
+import static io.netty.channel.unix.Errors.newIOException;
+import static io.netty.channel.unix.Errors.throwConnectException;
+import static io.netty.channel.unix.NativeInetAddress.address;
+import static io.netty.channel.unix.NativeInetAddress.ipv4MappedIpv6Address;
 import io.netty.util.CharsetUtil;
+import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 
 import java.io.IOException;
 import java.net.Inet6Address;
@@ -25,16 +35,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
-
-import static io.netty.channel.unix.Errors.ERRNO_EAGAIN_NEGATIVE;
-import static io.netty.channel.unix.Errors.ERRNO_EINPROGRESS_NEGATIVE;
-import static io.netty.channel.unix.Errors.ERRNO_EWOULDBLOCK_NEGATIVE;
-import static io.netty.channel.unix.Errors.ioResult;
-import static io.netty.channel.unix.Errors.throwConnectException;
-import static io.netty.channel.unix.Errors.newIOException;
-import static io.netty.channel.unix.NativeInetAddress.address;
-import static io.netty.channel.unix.NativeInetAddress.ipv4MappedIpv6Address;
-import static io.netty.util.internal.ThrowableUtil.unknownStackTrace;
 
 /**
  * Provides a JNI bridge to native socket operations.
@@ -57,7 +57,7 @@ public final class Socket extends FileDescriptor {
                     Errors.ERRNO_EPIPE_NEGATIVE), Socket.class, "sendToAddress");
     private static final Errors.NativeIoException CONNECTION_RESET_EXCEPTION_SENDMSG = unknownStackTrace(
             Errors.newConnectionResetException("syscall:sendmsg",
-            Errors.ERRNO_EPIPE_NEGATIVE), Socket.class, "sendToAddresses(..)");
+                    Errors.ERRNO_EPIPE_NEGATIVE), Socket.class, "sendToAddresses(..)");
     private static final Errors.NativeIoException CONNECTION_RESET_SHUTDOWN_EXCEPTION =
             unknownStackTrace(Errors.newConnectionResetException("syscall:shutdown",
                     Errors.ERRNO_ECONNRESET_NEGATIVE), Socket.class, "shutdown");
@@ -67,16 +67,118 @@ public final class Socket extends FileDescriptor {
     private static final Errors.NativeConnectException CONNECT_REFUSED_EXCEPTION =
             unknownStackTrace(new Errors.NativeConnectException("syscall:connect",
                     Errors.ERROR_ECONNREFUSED_NEGATIVE), Socket.class, "connect(..)");
+
     public Socket(int fd) {
         super(fd);
     }
+
+    public static Socket newSocketStream() {
+        int res = newSocketStreamFd();
+        if (res < 0) {
+            throw new ChannelException(newIOException("newSocketStream", res));
+        }
+        return new Socket(res);
+    }
+
+    public static Socket newSocketDgram() {
+        int res = newSocketDgramFd();
+        if (res < 0) {
+            throw new ChannelException(newIOException("newSocketDgram", res));
+        }
+        return new Socket(res);
+    }
+
+    public static Socket newSocketDomain() {
+        int res = newSocketDomainFd();
+        if (res < 0) {
+            throw new ChannelException(newIOException("newSocketDomain", res));
+        }
+        return new Socket(res);
+    }
+
+    private static native int shutdown(int fd, boolean read, boolean write);
+
+    private static native int connect(int fd, byte[] address, int scopeId, int port);
+
+    private static native int connectDomainSocket(int fd, byte[] path);
+
+    private static native int finishConnect(int fd);
+
+    private static native int bind(int fd, byte[] address, int scopeId, int port);
+
+    private static native int bindDomainSocket(int fd, byte[] path);
+
+    private static native int listen(int fd, int backlog);
+
+    private static native int accept(int fd, byte[] addr);
+
+    private static native byte[] remoteAddress(int fd);
+
+    private static native byte[] localAddress(int fd);
+
+    private static native int sendTo(
+            int fd, ByteBuffer buf, int pos, int limit, byte[] address, int scopeId, int port);
+
+    private static native int sendToAddress(
+            int fd, long memoryAddress, int pos, int limit, byte[] address, int scopeId, int port);
+
+    private static native int sendToAddresses(
+            int fd, long memoryAddress, int length, byte[] address, int scopeId, int port);
+
+    private static native DatagramSocketAddress recvFrom(
+            int fd, ByteBuffer buf, int pos, int limit) throws IOException;
+
+    private static native DatagramSocketAddress recvFromAddress(
+            int fd, long memoryAddress, int pos, int limit) throws IOException;
+
+    private static native int newSocketStreamFd();
+
+    private static native int newSocketDgramFd();
+
+    private static native int newSocketDomainFd();
+
+    private static native int getReceiveBufferSize(int fd) throws IOException;
+
+    private static native int getSendBufferSize(int fd) throws IOException;
+
+    private static native int isKeepAlive(int fd) throws IOException;
+
+    private static native int isTcpNoDelay(int fd) throws IOException;
+
+    private static native int isTcpCork(int fd) throws IOException;
+
+    private static native int getSoLinger(int fd) throws IOException;
+
+    private static native int getSoError(int fd) throws IOException;
+
+    private static native int getTcpDeferAccept(int fd) throws IOException;
+
+    private static native int isTcpQuickAck(int fd) throws IOException;
+
+    private static native PeerCredentials getPeerCredentials(int fd) throws IOException;
+
+    private static native void setKeepAlive(int fd, int keepAlive) throws IOException;
+
+    private static native void setReceiveBufferSize(int fd, int receiveBufferSize) throws IOException;
+
+    private static native void setSendBufferSize(int fd, int sendBufferSize) throws IOException;
+
+    private static native void setTcpNoDelay(int fd, int tcpNoDelay) throws IOException;
+
+    private static native void setTcpCork(int fd, int tcpCork) throws IOException;
+
+    private static native void setSoLinger(int fd, int soLinger) throws IOException;
+
+    private static native void setTcpDeferAccept(int fd, int deferAccept) throws IOException;
+
+    private static native void setTcpQuickAck(int fd, int quickAck) throws IOException;
 
     public void shutdown() throws IOException {
         shutdown(true, true);
     }
 
     public void shutdown(boolean read, boolean write) throws IOException {
-        for (;;) {
+        for (; ; ) {
             // We need to only shutdown what has not been shutdown yet, and if there is no change we should not
             // shutdown anything. This is because if the underlying FD is reused and we still have an object which
             // represents the previous incarnation of the FD we need to be sure we don't inadvertently shutdown the
@@ -287,32 +389,64 @@ public final class Socket extends FileDescriptor {
         return getReceiveBufferSize(fd);
     }
 
+    public void setReceiveBufferSize(int receiveBufferSize) throws IOException {
+        setReceiveBufferSize(fd, receiveBufferSize);
+    }
+
     public int getSendBufferSize() throws IOException {
         return getSendBufferSize(fd);
+    }
+
+    public void setSendBufferSize(int sendBufferSize) throws IOException {
+        setSendBufferSize(fd, sendBufferSize);
     }
 
     public boolean isKeepAlive() throws IOException {
         return isKeepAlive(fd) != 0;
     }
 
+    public void setKeepAlive(boolean keepAlive) throws IOException {
+        setKeepAlive(fd, keepAlive ? 1 : 0);
+    }
+
     public boolean isTcpNoDelay() throws IOException {
         return isTcpNoDelay(fd) != 0;
     }
 
-    public boolean isTcpCork() throws IOException  {
+    public void setTcpNoDelay(boolean tcpNoDelay) throws IOException {
+        setTcpNoDelay(fd, tcpNoDelay ? 1 : 0);
+    }
+
+    public boolean isTcpCork() throws IOException {
         return isTcpCork(fd) != 0;
+    }
+
+    public void setTcpCork(boolean tcpCork) throws IOException {
+        setTcpCork(fd, tcpCork ? 1 : 0);
     }
 
     public int getSoLinger() throws IOException {
         return getSoLinger(fd);
     }
 
+    public void setSoLinger(int soLinger) throws IOException {
+        setSoLinger(fd, soLinger);
+    }
+
     public int getTcpDeferAccept() throws IOException {
         return getTcpDeferAccept(fd);
     }
 
+    public void setTcpDeferAccept(int deferAccept) throws IOException {
+        setTcpDeferAccept(fd, deferAccept);
+    }
+
     public boolean isTcpQuickAck() throws IOException {
         return isTcpQuickAck(fd) != 0;
+    }
+
+    public void setTcpQuickAck(boolean quickAck) throws IOException {
+        setTcpQuickAck(fd, quickAck ? 1 : 0);
     }
 
     public int getSoError() throws IOException {
@@ -323,114 +457,10 @@ public final class Socket extends FileDescriptor {
         return getPeerCredentials(fd);
     }
 
-    public void setKeepAlive(boolean keepAlive) throws IOException {
-        setKeepAlive(fd, keepAlive ? 1 : 0);
-    }
-
-    public void setReceiveBufferSize(int receiveBufferSize) throws IOException  {
-        setReceiveBufferSize(fd, receiveBufferSize);
-    }
-
-    public void setSendBufferSize(int sendBufferSize) throws IOException {
-        setSendBufferSize(fd, sendBufferSize);
-    }
-
-    public void setTcpNoDelay(boolean tcpNoDelay) throws IOException  {
-        setTcpNoDelay(fd, tcpNoDelay ? 1 : 0);
-    }
-
-    public void setTcpCork(boolean tcpCork) throws IOException {
-        setTcpCork(fd, tcpCork ? 1 : 0);
-    }
-
-    public void setSoLinger(int soLinger) throws IOException {
-        setSoLinger(fd, soLinger);
-    }
-
-    public void setTcpDeferAccept(int deferAccept) throws IOException {
-        setTcpDeferAccept(fd, deferAccept);
-    }
-
-    public void setTcpQuickAck(boolean quickAck) throws IOException {
-        setTcpQuickAck(fd, quickAck ? 1 : 0);
-    }
-
     @Override
     public String toString() {
         return "Socket{" +
                 "fd=" + fd +
                 '}';
     }
-
-    public static Socket newSocketStream() {
-        int res = newSocketStreamFd();
-        if (res < 0) {
-            throw new ChannelException(newIOException("newSocketStream", res));
-        }
-        return new Socket(res);
-    }
-
-    public static Socket newSocketDgram() {
-        int res = newSocketDgramFd();
-        if (res < 0) {
-            throw new ChannelException(newIOException("newSocketDgram", res));
-        }
-        return new Socket(res);
-    }
-
-    public static Socket newSocketDomain() {
-        int res = newSocketDomainFd();
-        if (res < 0) {
-            throw new ChannelException(newIOException("newSocketDomain", res));
-        }
-        return new Socket(res);
-    }
-
-    private static native int shutdown(int fd, boolean read, boolean write);
-    private static native int connect(int fd, byte[] address, int scopeId, int port);
-    private static native int connectDomainSocket(int fd, byte[] path);
-    private static native int finishConnect(int fd);
-    private static native int bind(int fd, byte[] address, int scopeId, int port);
-    private static native int bindDomainSocket(int fd, byte[] path);
-    private static native int listen(int fd, int backlog);
-    private static native int accept(int fd, byte[] addr);
-
-    private static native byte[] remoteAddress(int fd);
-    private static native byte[] localAddress(int fd);
-
-    private static native int sendTo(
-            int fd, ByteBuffer buf, int pos, int limit, byte[] address, int scopeId, int port);
-    private static native int sendToAddress(
-            int fd, long memoryAddress, int pos, int limit, byte[] address, int scopeId, int port);
-    private static native int sendToAddresses(
-            int fd, long memoryAddress, int length, byte[] address, int scopeId, int port);
-
-    private static native DatagramSocketAddress recvFrom(
-            int fd, ByteBuffer buf, int pos, int limit) throws IOException;
-    private static native DatagramSocketAddress recvFromAddress(
-            int fd, long memoryAddress, int pos, int limit) throws IOException;
-
-    private static native int newSocketStreamFd();
-    private static native int newSocketDgramFd();
-    private static native int newSocketDomainFd();
-
-    private static native int getReceiveBufferSize(int fd) throws IOException;
-    private static native int getSendBufferSize(int fd) throws IOException;
-    private static native int isKeepAlive(int fd) throws IOException;
-    private static native int isTcpNoDelay(int fd) throws IOException;
-    private static native int isTcpCork(int fd) throws IOException;
-    private static native int getSoLinger(int fd) throws IOException;
-    private static native int getSoError(int fd) throws IOException;
-    private static native int getTcpDeferAccept(int fd) throws IOException;
-    private static native int isTcpQuickAck(int fd) throws IOException;
-    private static native PeerCredentials getPeerCredentials(int fd) throws IOException;
-
-    private static native void setKeepAlive(int fd, int keepAlive) throws IOException;
-    private static native void setReceiveBufferSize(int fd, int receiveBufferSize) throws IOException;
-    private static native void setSendBufferSize(int fd, int sendBufferSize) throws IOException;
-    private static native void setTcpNoDelay(int fd, int tcpNoDelay) throws IOException;
-    private static native void setTcpCork(int fd, int tcpCork) throws IOException;
-    private static native void setSoLinger(int fd, int soLinger) throws IOException;
-    private static native void setTcpDeferAccept(int fd, int deferAccept) throws IOException;
-    private static native void setTcpQuickAck(int fd, int quickAck) throws IOException;
 }

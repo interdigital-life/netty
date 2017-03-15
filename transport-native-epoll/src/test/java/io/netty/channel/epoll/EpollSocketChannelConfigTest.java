@@ -13,22 +13,22 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.*;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelException;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoopGroup;
+import org.junit.AfterClass;
+import static org.junit.Assert.*;
+import static org.junit.Assume.*;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.Random;
-
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 public class EpollSocketChannelConfigTest {
 
@@ -63,11 +63,11 @@ public class EpollSocketChannelConfigTest {
     private long nextLong(long n) {
         long bits, val;
         do {
-           bits = (rand.nextLong() << 1) >>> 1;
-           val = bits % n;
+            bits = (rand.nextLong() << 1) >>> 1;
+            val = bits % n;
         } while (bits - val + (n - 1) < 0L);
         return val;
-     }
+    }
 
     @Test
     public void testRandomTcpNotSentLowAt() {

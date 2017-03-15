@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.channel.Channel;
@@ -24,11 +25,10 @@ import io.netty.channel.unix.DomainSocketChannel;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.Socket;
-
-import java.net.SocketAddress;
-
 import static io.netty.channel.unix.Socket.newSocketDomain;
+
 import java.io.IOException;
+import java.net.SocketAddress;
 
 public final class EpollDomainSocketChannel extends AbstractEpollStreamChannel implements DomainSocketChannel {
     private final EpollDomainSocketChannelConfig config = new EpollDomainSocketChannelConfig(this);
@@ -171,22 +171,23 @@ public final class EpollDomainSocketChannel extends AbstractEpollStreamChannel i
             epollInBefore();
 
             try {
-                readLoop: do {
+                readLoop:
+                do {
                     // lastBytesRead represents the fd. We use lastBytesRead because it must be set so that the
                     // EpollRecvByteAllocatorHandle knows if it should try to read again or not when autoRead is
                     // enabled.
                     allocHandle.lastBytesRead(Native.recvFd(fd().intValue()));
-                    switch(allocHandle.lastBytesRead()) {
-                    case 0:
-                        break readLoop;
-                    case -1:
-                        close(voidPromise());
-                        return;
-                    default:
-                        allocHandle.incMessagesRead(1);
-                        readPending = false;
-                        pipeline.fireChannelRead(new FileDescriptor(allocHandle.lastBytesRead()));
-                        break;
+                    switch (allocHandle.lastBytesRead()) {
+                        case 0:
+                            break readLoop;
+                        case -1:
+                            close(voidPromise());
+                            return;
+                        default:
+                            allocHandle.incMessagesRead(1);
+                            readPending = false;
+                            pipeline.fireChannelRead(new FileDescriptor(allocHandle.lastBytesRead()));
+                            break;
                     }
                 } while (allocHandle.continueReading());
 

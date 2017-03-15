@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.bootstrap.Bootstrap;
@@ -33,7 +34,7 @@ public class EpollETSocketReadPendingTest extends SocketReadPendingTest {
     protected void configure(ServerBootstrap bootstrap, Bootstrap bootstrap2, ByteBufAllocator allocator) {
         super.configure(bootstrap, bootstrap2, allocator);
         bootstrap.option(EpollChannelOption.EPOLL_MODE, EpollMode.EDGE_TRIGGERED)
-                 .childOption(EpollChannelOption.EPOLL_MODE, EpollMode.EDGE_TRIGGERED);
+                .childOption(EpollChannelOption.EPOLL_MODE, EpollMode.EDGE_TRIGGERED);
         bootstrap2.option(EpollChannelOption.EPOLL_MODE, EpollMode.EDGE_TRIGGERED);
     }
 }

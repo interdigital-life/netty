@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.util.internal.PlatformDependent;
@@ -21,15 +22,15 @@ import io.netty.util.internal.PlatformDependent;
  * This is an internal datastructure which can be directly passed to epoll_wait to reduce the overhead.
  *
  * typedef union epoll_data {
- *     void        *ptr;
- *     int          fd;
- *     uint32_t     u32;
- *     uint64_t     u64;
+ * void        *ptr;
+ * int          fd;
+ * uint32_t     u32;
+ * uint64_t     u64;
  * } epoll_data_t;
  *
  * struct epoll_event {
- *     uint32_t     events;      // Epoll events
- *     epoll_data_t data;        // User data variable
+ * uint32_t     events;      // Epoll events
+ * epoll_data_t data;        // User data variable
  * };
  *
  * We use {@code fd} if the {@code epoll_data union} to store the actual file descriptor of an

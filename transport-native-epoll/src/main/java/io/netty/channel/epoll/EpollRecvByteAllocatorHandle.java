@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package io.netty.channel.epoll;
 
 import io.netty.buffer.ByteBuf;
@@ -54,7 +55,7 @@ class EpollRecvByteAllocatorHandle implements RecvByteBufAllocator.ExtendedHandl
          * read, and will force a EPOLLIN ready event.
          */
         return (isEdgeTriggered && lastBytesRead() > 0) ||
-               (!isEdgeTriggered && lastBytesRead() == attemptedBytesRead()) ||
+                (!isEdgeTriggered && lastBytesRead() == attemptedBytesRead()) ||
                 receivedRdHup;
     }
 
